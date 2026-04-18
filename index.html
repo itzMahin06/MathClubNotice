@@ -1,292 +1,927 @@
 <!DOCTYPE html>
 <html lang="bn">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Premium Notice Maker Pro</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.cdnfonts.com/css/solaimanlipi" rel="stylesheet">
-    <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
-    <script src="https://cdn.quilljs.com/1.3.6/quill.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-    
-    <style>
-        body { font-family: 'SolaimanLipi', sans-serif; background-color: #f0f2f5; }
-        
-        /* Dashboard Preview Styling */
-        .preview-box {
-            height: calc(100vh - 100px);
-            overflow-y: auto;
-            background: #374151;
-            padding: 40px;
-            display: flex;
-            justify-content: center;
-            border-radius: 16px;
-        }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>নোটিশ জেনেরেটর</title>
+<link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+  @import url('https://fonts.maateen.me/solaiman-lipi/font.css');
+  
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-        .scaled-view {
-            transform: scale(0.6);
-            transform-origin: top center;
-        }
+  :root {
+    --primary: #1a3a6b;
+    --accent: #c8972a;
+    --light-bg: #f0f4f8;
+    --border: #d0d9e8;
+    --text: #1a2a3a;
+    --white: #ffffff;
+  }
 
-        /* Standard A4 Paper Design */
-        #notice-printable {
-            background: white;
-            width: 210mm;
-            height: 297mm;
-            padding: 20mm;
-            position: relative;
-            box-sizing: border-box;
-            display: flex;
-            flex-direction: column;
-            box-shadow: 0 0 30px rgba(0,0,0,0.5);
-            color: black;
-        }
+  body {
+    font-family: 'SolaimanLipi', 'Hind Siliguri', sans-serif;
+    background: linear-gradient(135deg, #e8eef7 0%, #f5f0e8 100%);
+    min-height: 100vh;
+    color: var(--text);
+  }
 
-        .watermark {
-            position: absolute;
-            top: 50%; left: 50%;
-            transform: translate(-50%, -50%);
-            width: 70%; opacity: 0.06;
-            z-index: 0; pointer-events: none;
-        }
+  /* ===== HEADER ===== */
+  .site-header {
+    background: linear-gradient(135deg, var(--primary) 0%, #0d2347 100%);
+    color: white;
+    padding: 16px 20px;
+    text-align: center;
+    box-shadow: 0 4px 20px rgba(26,58,107,0.4);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .site-header h1 {
+    font-size: clamp(1.1rem, 4vw, 1.5rem);
+    font-weight: 700;
+    letter-spacing: 1px;
+  }
+  .site-header p { font-size: 0.8rem; opacity: 0.8; margin-top: 3px; }
 
-        .content-layer { position: relative; z-index: 10; flex-grow: 1; display: flex; flex-direction: column; }
+  /* ===== MAIN LAYOUT ===== */
+  .container {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 16px;
+  }
 
-        /* Typography */
-        .notice-body-text { 
-            text-align: justify; 
-            line-height: 1.8; 
-            font-size: 20px; 
-            min-height: 450px;
-            word-wrap: break-word;
-        }
+  .editor-section {
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 8px 40px rgba(26,58,107,0.12);
+    overflow: hidden;
+    margin-bottom: 20px;
+  }
 
-        /* Hide Iframe from UI */
-        #print-iframe { display: none; }
+  .section-header {
+    background: linear-gradient(90deg, var(--primary), #2a5aa8);
+    color: white;
+    padding: 12px 20px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .section-header .icon { font-size: 1.1rem; }
 
-        @media screen and (max-width: 1024px) {
-            .scaled-view { transform: scale(0.4); }
-        }
-    </style>
+  .section-body { padding: 20px; }
+
+  /* ===== FORM ELEMENTS ===== */
+  .form-group { margin-bottom: 16px; }
+  .form-group label {
+    display: block;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--primary);
+    margin-bottom: 6px;
+  }
+  .form-group input[type="text"],
+  .form-group input[type="date"] {
+    width: 100%;
+    padding: 10px 14px;
+    border: 2px solid var(--border);
+    border-radius: 10px;
+    font-family: 'SolaimanLipi', 'Hind Siliguri', sans-serif;
+    font-size: 0.95rem;
+    color: var(--text);
+    transition: border-color 0.2s, box-shadow 0.2s;
+    background: #fafcff;
+  }
+  .form-group input:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(26,58,107,0.1);
+  }
+
+  /* ===== TOOLBAR ===== */
+  .toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    padding: 8px;
+    background: #f0f4f8;
+    border-radius: 8px 8px 0 0;
+    border: 2px solid var(--border);
+    border-bottom: none;
+  }
+  .toolbar button {
+    padding: 5px 10px;
+    border: 1px solid #c8d5e8;
+    background: white;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.8rem;
+    font-family: 'SolaimanLipi', 'Hind Siliguri', sans-serif;
+    font-weight: 600;
+    color: var(--text);
+    transition: all 0.15s;
+    min-width: 32px;
+    text-align: center;
+  }
+  .toolbar button:hover { background: var(--primary); color: white; border-color: var(--primary); }
+  .toolbar select {
+    padding: 5px 8px;
+    border: 1px solid #c8d5e8;
+    background: white;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    font-family: 'SolaimanLipi', 'Hind Siliguri', sans-serif;
+    cursor: pointer;
+    color: var(--text);
+  }
+  .toolbar input[type="color"] {
+    width: 32px;
+    height: 30px;
+    border: 1px solid #c8d5e8;
+    border-radius: 6px;
+    cursor: pointer;
+    padding: 2px;
+  }
+  .toolbar-divider {
+    width: 1px;
+    background: #c8d5e8;
+    align-self: stretch;
+    margin: 0 2px;
+  }
+
+  #editor {
+    min-height: 160px;
+    max-height: 300px;
+    overflow-y: auto;
+    padding: 14px;
+    border: 2px solid var(--border);
+    border-top: none;
+    border-radius: 0 0 8px 8px;
+    font-family: 'SolaimanLipi', 'Hind Siliguri', sans-serif;
+    font-size: 0.95rem;
+    line-height: 1.8;
+    color: var(--text);
+    outline: none;
+    background: #fafcff;
+    text-align: justify;
+  }
+  #editor:focus { border-color: var(--primary); }
+
+  /* ===== SIGNATURE ===== */
+  .sig-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+  .sig-box {
+    border: 2px dashed var(--border);
+    border-radius: 10px;
+    padding: 14px;
+    text-align: center;
+    transition: border-color 0.2s;
+    cursor: pointer;
+    background: #fafcff;
+  }
+  .sig-box:hover { border-color: var(--primary); background: #f0f4f8; }
+  .sig-box label {
+    display: block;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--primary);
+    margin-bottom: 8px;
+    cursor: pointer;
+  }
+  .sig-preview {
+    width: 100%;
+    height: 60px;
+    object-fit: contain;
+    display: none;
+    margin-bottom: 6px;
+  }
+  .sig-upload-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 14px;
+    background: white;
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    font-size: 0.78rem;
+    font-family: 'SolaimanLipi', 'Hind Siliguri', sans-serif;
+    color: var(--primary);
+    cursor: pointer;
+    transition: all 0.15s;
+    font-weight: 600;
+  }
+  .sig-upload-btn:hover { background: var(--primary); color: white; border-color: var(--primary); }
+  input[type="file"] { display: none; }
+
+  /* ===== GENERATE BUTTON ===== */
+  .generate-btn {
+    width: 100%;
+    padding: 16px;
+    background: linear-gradient(135deg, var(--primary), #2a5aa8);
+    color: white;
+    border: none;
+    border-radius: 14px;
+    font-size: 1.1rem;
+    font-weight: 700;
+    font-family: 'SolaimanLipi', 'Hind Siliguri', sans-serif;
+    cursor: pointer;
+    letter-spacing: 0.5px;
+    box-shadow: 0 6px 24px rgba(26,58,107,0.35);
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+  .generate-btn:hover { transform: translateY(-2px); box-shadow: 0 10px 32px rgba(26,58,107,0.45); }
+  .generate-btn:active { transform: translateY(0); }
+
+  /* ===== PREVIEW SECTION ===== */
+  #preview-section { display: none; }
+
+  .preview-header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+  .preview-title {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--primary);
+  }
+  .action-btns {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .action-btn {
+    padding: 9px 16px;
+    border: none;
+    border-radius: 10px;
+    font-size: 0.85rem;
+    font-weight: 700;
+    font-family: 'SolaimanLipi', 'Hind Siliguri', sans-serif;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.15s;
+  }
+  .btn-print { background: var(--primary); color: white; }
+  .btn-img { background: linear-gradient(135deg, #c8972a, #e8b840); color: white; }
+  .action-btn:hover { transform: translateY(-1px); opacity: 0.9; }
+
+  /* ===== PREVIEW WRAPPER ===== */
+  .preview-scroll-wrapper {
+    overflow-x: auto;
+    background: #e0e0e0;
+    padding: 20px;
+    border-radius: 14px;
+  }
+
+  /* ===== A4 NOTICE ===== */
+  #notice-output {
+    width: 794px;
+    min-height: 1123px;
+    background: white;
+    margin: 0 auto;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    font-family: 'SolaimanLipi', 'Hind Siliguri', sans-serif;
+    overflow: hidden;
+    box-shadow: 0 4px 30px rgba(0,0,0,0.15);
+  }
+
+  /* Watermark */
+  .watermark {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 55%;
+    opacity: 0.065;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .notice-inner {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 1123px;
+    padding: 30px 50px 30px 50px;
+  }
+
+  /* Top border decoration */
+  .top-border {
+    height: 6px;
+    background: linear-gradient(90deg, var(--primary) 0%, var(--accent) 50%, var(--primary) 100%);
+    margin: -30px -50px 0 -50px;
+    margin-bottom: 20px;
+  }
+
+  /* Header row */
+  .notice-header-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-bottom: 16px;
+    border-bottom: 2.5px solid var(--primary);
+    margin-bottom: 6px;
+  }
+  .notice-logo-left {
+    width: 90px;
+    height: 90px;
+    object-fit: contain;
+  }
+  .notice-logo-right {
+    width: 90px;
+    height: 90px;
+    object-fit: contain;
+  }
+  .notice-org-center {
+    flex: 1;
+    text-align: center;
+    padding: 0 16px;
+  }
+  .org-name-bn {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--primary);
+    line-height: 1.4;
+  }
+  .org-name-en {
+    font-size: 0.78rem;
+    color: #4a6080;
+    margin-top: 2px;
+  }
+  .org-tagline {
+    font-size: 0.75rem;
+    color: #6a80a0;
+    margin-top: 2px;
+  }
+
+  /* Sub info line */
+  .notice-subinfo {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.72rem;
+    color: #5a7090;
+    padding: 5px 0 10px 0;
+    border-bottom: 1px solid #d0d9e8;
+    margin-bottom: 18px;
+  }
+
+  /* Notice title box */
+  .notice-title-box {
+    text-align: center;
+    margin-bottom: 18px;
+  }
+  .notice-title-main {
+    display: inline-block;
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: var(--primary);
+    letter-spacing: 3px;
+    padding: 6px 40px;
+    border-top: 2.5px solid var(--accent);
+    border-bottom: 2.5px solid var(--accent);
+    position: relative;
+  }
+  .notice-title-main::before,
+  .notice-title-main::after {
+    content: '◆';
+    color: var(--accent);
+    font-size: 0.9rem;
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+  }
+  .notice-title-main::before { left: 10px; }
+  .notice-title-main::after { right: 10px; }
+
+  .notice-subtitle {
+    font-size: 0.85rem;
+    color: #5a7090;
+    margin-top: 5px;
+  }
+
+  /* Date line */
+  .notice-date-line {
+    text-align: right;
+    font-size: 0.88rem;
+    color: var(--text);
+    margin-bottom: 18px;
+    font-weight: 500;
+  }
+
+  /* Body */
+  .notice-body {
+    flex: 1;
+    font-size: 1rem;
+    line-height: 1.9;
+    color: #1a2a3a;
+    text-align: justify;
+    hyphens: auto;
+  }
+
+  /* Signature section */
+  .notice-sig-section {
+    margin-top: 36px;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+  }
+  .sig-item {
+    text-align: center;
+    min-width: 160px;
+  }
+  .sig-img {
+    height: 55px;
+    max-width: 140px;
+    object-fit: contain;
+    display: block;
+    margin: 0 auto 6px auto;
+  }
+  .sig-line {
+    border-top: 1.5px solid var(--text);
+    margin-bottom: 5px;
+    width: 140px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+  .sig-name {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--primary);
+  }
+  .sig-role {
+    font-size: 0.78rem;
+    color: #5a7090;
+  }
+
+  /* Bottom */
+  .notice-footer {
+    margin-top: 24px;
+    border-top: 2px solid var(--primary);
+    padding-top: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+  }
+  .fb-logo {
+    width: 22px;
+    height: 22px;
+  }
+  .footer-fb-text {
+    font-size: 0.8rem;
+    color: #1877F2;
+    font-weight: 600;
+  }
+
+  .bottom-border {
+    height: 6px;
+    background: linear-gradient(90deg, var(--primary) 0%, var(--accent) 50%, var(--primary) 100%);
+    margin: 10px -50px -10px -50px;
+  }
+
+  /* ===== MOBILE RESPONSIVE ===== */
+  @media (max-width: 768px) {
+    .sig-grid { grid-template-columns: 1fr 1fr; gap: 10px; }
+    .preview-scroll-wrapper { padding: 10px; }
+    .toolbar button { padding: 4px 7px; font-size: 0.72rem; min-width: 28px; }
+  }
+
+  @media (max-width: 480px) {
+    .container { padding: 10px; }
+    .section-body { padding: 14px; }
+    .toolbar { gap: 3px; }
+  }
+
+  /* ===== PRINT STYLES ===== */
+  @media print {
+    @page {
+      size: A4 portrait;
+      margin: 0;
+    }
+    html, body { width: 210mm; height: 297mm; overflow: hidden; }
+    body * { visibility: hidden; }
+    #notice-output, #notice-output * { visibility: visible; }
+    #notice-output {
+      position: fixed !important;
+      left: 0 !important; top: 0 !important;
+      width: 210mm !important;
+      height: 297mm !important;
+      min-height: unset !important;
+      box-shadow: none !important;
+      margin: 0 !important;
+      overflow: hidden !important;
+      page-break-inside: avoid;
+    }
+    .notice-inner {
+      padding: 14mm 16mm 10mm 16mm !important;
+      min-height: unset !important;
+      height: 297mm !important;
+      display: flex !important;
+      flex-direction: column !important;
+      justify-content: space-between !important;
+    }
+    .top-border { margin: -14mm -16mm 10px -16mm !important; }
+    .bottom-border { margin: 6px -16mm -10px -16mm !important; }
+    .notice-body { font-size: 10pt !important; line-height: 1.6 !important; }
+    .notice-title-main { font-size: 20pt !important; }
+    .org-name-bn { font-size: 13pt !important; }
+  }
+
+  /* Loading overlay */
+  .loading-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 9999;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    gap: 16px;
+    color: white;
+    font-size: 1rem;
+    font-family: 'SolaimanLipi', 'Hind Siliguri', sans-serif;
+  }
+  .loading-overlay.show { display: flex; }
+  .spinner {
+    width: 48px; height: 48px;
+    border: 5px solid rgba(255,255,255,0.3);
+    border-top-color: white;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+</style>
 </head>
-<body class="p-4 md:p-8">
+<body>
 
-<div class="max-w-[1600px] mx-auto grid grid-cols-1 lg:grid-cols-12 gap-8">
-    
-    <div class="lg:col-span-4 space-y-6">
-        <div class="bg-white p-6 rounded-2xl shadow-xl border-t-8 border-blue-600">
-            <h2 class="text-2xl font-bold mb-6 text-blue-800 border-b pb-2">Notice Editor</h2>
-            
-            <div class="space-y-4">
-                <input type="text" id="in-title" placeholder="নোটিশ শিরোনাম (উদা: জরুরি নোটিশ)" class="w-full border-2 p-3 rounded-xl outline-none focus:border-blue-500 transition-all">
-                <input type="text" id="in-date" placeholder="তারিখ (উদা: ০৭ এপ্রিল ২০২৬)" class="w-full border-2 p-3 rounded-xl outline-none focus:border-blue-500 transition-all">
-                
-                <div class="border-2 rounded-xl overflow-hidden shadow-sm">
-                    <div id="toolbar">
-                        <span class="ql-formats">
-                            <button class="ql-bold"></button>
-                            <button class="ql-italic"></button>
-                            <select class="ql-align"></select>
-                            <select class="ql-color"></select>
-                        </span>
-                    </div>
-                    <div id="editor" style="height: 300px; font-size: 16px;"></div>
-                </div>
-
-                <div class="grid grid-cols-2 gap-3">
-                    <div class="bg-blue-50 p-3 rounded-lg border border-blue-100">
-                        <label class="text-[11px] font-bold text-blue-700 uppercase">সভাপতির স্বাক্ষর</label>
-                        <input type="file" onchange="loadSignature(event, 'sig1')" class="text-[10px] w-full mt-1">
-                    </div>
-                    <div class="bg-indigo-50 p-3 rounded-lg border border-indigo-100">
-                        <label class="text-[11px] font-bold text-indigo-700 uppercase">সম্পাদকের স্বাক্ষর</label>
-                        <input type="file" onchange="loadSignature(event, 'sig2')" class="text-[10px] w-full mt-1">
-                    </div>
-                </div>
-
-                <div class="grid grid-cols-2 gap-4 pt-4">
-                    <button onclick="saveAsImage()" class="bg-gray-800 text-white font-bold py-4 rounded-2xl hover:bg-black shadow-lg transition-all active:scale-95">Save Image</button>
-                    <button onclick="premiumPrint()" class="bg-blue-600 text-white font-bold py-4 rounded-2xl hover:bg-blue-700 shadow-lg transition-all active:scale-95 flex items-center justify-center gap-2">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
-                        Print Now
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="lg:col-span-8">
-        <div class="preview-box shadow-inner">
-            <div class="scaled-view">
-                <div id="notice-printable">
-                    <img src="https://i.ibb.co.com/7t41Zgzd/Untitled-design-20260406-235728-0000.png" class="watermark">
-
-                    <div class="content-layer">
-                        <div class="flex justify-between items-center border-b-[5px] border-blue-900 pb-5 mb-10">
-                            <img src="https://i.ibb.co.com/7t41Zgzd/Untitled-design-20260406-235728-0000.png" class="h-32 w-auto object-contain">
-                            <div class="text-center">
-                                <h1 class="text-7xl font-black text-blue-800 tracking-tighter">গণিত ক্লাব</h1>
-                                <p class="text-3xl font-bold mt-2 text-gray-700">আনন্দ মোহন কলেজ, ময়মনসিংহ</p>
-                                <div class="h-1 w-24 bg-red-600 mx-auto mt-2"></div>
-                            </div>
-                            <img src="https://i.ibb.co.com/FLHqcSdk/dclogo.png" class="h-32 w-auto object-contain">
-                        </div>
-
-                        <div class="flex justify-between items-center mb-10">
-                            <div class="bg-blue-800 text-white px-8 py-2 rounded-r-full -ml-[20mm]">
-                                <h2 id="out-title" class="text-2xl font-bold">নোটিশ-০১</h2>
-                            </div>
-                            <div class="text-right">
-                                <p class="text-2xl font-bold">তারিখঃ <span id="out-date" class="border-b-2 border-black">০৭ এপ্রিল ২০২৬</span></p>
-                            </div>
-                        </div>
-
-                        <div id="out-body" class="notice-body-text ql-editor">
-                            এখানে আপনার নোটিশের মূল বক্তব্য টাইপ করুন...
-                        </div>
-
-                        <div class="mt-auto mb-12 grid grid-cols-2 gap-32 px-10">
-                            <div class="text-center">
-                                <div class="h-28 flex items-end justify-center mb-2">
-                                    <img id="sig1" class="max-h-full transition-all duration-500" style="display:none">
-                                </div>
-                                <div class="border-t-2 border-black pt-2">
-                                    <p class="font-bold text-2xl text-gray-900">সভাপতি</p>
-                                    <p class="text-lg text-gray-600">গণিত ক্লাব</p>
-                                </div>
-                            </div>
-                            <div class="text-center">
-                                <div class="h-28 flex items-end justify-center mb-2">
-                                    <img id="sig2" class="max-h-full transition-all duration-500" style="display:none">
-                                </div>
-                                <div class="border-t-2 border-black pt-2">
-                                    <p class="font-bold text-2xl text-gray-900">সাধারণ সম্পাদক</p>
-                                    <p class="text-lg text-gray-600">গণিত ক্লাব</p>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="flex justify-center border-t-2 pt-8">
-                            <div class="bg-[#1877F2] text-white flex items-center gap-4 px-10 py-3 rounded-full shadow-lg">
-                                <svg class="w-8 h-8 fill-current" viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.469h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.469h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
-                                <span class="font-black text-xl tracking-wide">MathClubAnandaMohanCollege</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
+<div class="loading-overlay" id="loadingOverlay">
+  <div class="spinner"></div>
+  <span id="loadingText">প্রসেস হচ্ছে...</span>
 </div>
 
-<iframe id="print-iframe"></iframe>
+<header class="site-header">
+  <h1>📋 নোটিশ জেনেরেটর</h1>
+  <p>গণিত ক্লাব-আনন্দ মোহন কলেজ</p>
+</header>
+
+<div class="container">
+
+  <!-- NOTICE TITLE INPUT -->
+  <div class="editor-section">
+    <div class="section-header"><span class="icon">✏️</span> নোটিশের তথ্য</div>
+    <div class="section-body">
+      <div class="form-group">
+        <label>নোটিশের শিরোনাম (Title)</label>
+        <input type="text" id="noticeTitle" placeholder="যেমন: বার্ষিক সভার নোটিশ" value="">
+      </div>
+      <div class="form-group">
+        <label>তারিখঃ</label>
+        <input type="date" id="noticeDate">
+      </div>
+      <div class="form-group">
+        <label>স্মারক নংঃ</label>
+        <input type="text" id="noticeSmarok" placeholder="যেমন: ডিসি/২০২৬/০১">
+      </div>
+    </div>
+  </div>
+
+  <!-- BODY TEXT EDITOR -->
+  <div class="editor-section">
+    <div class="section-header"><span class="icon">📝</span> নোটিশের মূল বিষয়বস্তু</div>
+    <div class="section-body">
+      <div class="toolbar" id="toolbar">
+        <button onclick="fmt('bold')" title="Bold"><b>B</b></button>
+        <button onclick="fmt('italic')" title="Italic"><i>I</i></button>
+        <button onclick="fmt('underline')" title="Underline"><u>U</u></button>
+        <div class="toolbar-divider"></div>
+        <button onclick="fmt('justifyLeft')" title="Left">⬅</button>
+        <button onclick="fmt('justifyCenter')" title="Center">↔</button>
+        <button onclick="fmt('justifyRight')" title="Right">➡</button>
+        <button onclick="fmt('justifyFull')" title="Justify">☰</button>
+        <div class="toolbar-divider"></div>
+        <select onchange="setFontSize(this.value)" title="ফন্ট সাইজ">
+          <option value="">সাইজ</option>
+          <option value="1">ছোট</option>
+          <option value="3">স্বাভাবিক</option>
+          <option value="5">বড়</option>
+          <option value="7">অনেক বড়</option>
+        </select>
+        <div class="toolbar-divider"></div>
+        <input type="color" id="fontColor" onchange="setColor(this.value)" value="#1a2a3a" title="রঙ">
+        <button onclick="setColor('#1a2a3a')" style="font-size:0.7rem">কালো</button>
+        <button onclick="setColor('#1a3a6b')" style="font-size:0.7rem; color:#1a3a6b">নীল</button>
+        <button onclick="setColor('#c0392b')" style="font-size:0.7rem; color:#c0392b">লাল</button>
+        <div class="toolbar-divider"></div>
+        <button onclick="fmt('insertUnorderedList')" title="List">• তালিকা</button>
+        <button onclick="fmt('insertOrderedList')" title="Num">১. তালিকা</button>
+      </div>
+      <div id="editor" contenteditable="true" dir="auto">এখানে নোটিশের মূল বিষয়বস্তু লিখুন...</div>
+    </div>
+  </div>
+
+  <!-- SIGNATURES -->
+  <div class="editor-section">
+    <div class="section-header"><span class="icon">✍️</span> স্বাক্ষর আপলোড করুন</div>
+    <div class="section-body">
+      <div class="sig-grid">
+        <div class="sig-box" onclick="document.getElementById('sig1Input').click()">
+          <label>সভাপতি</label>
+          <img id="sig1Preview" class="sig-preview" src="" alt="স্বাক্ষর">
+          <span class="sig-upload-btn">📷 স্বাক্ষর আপলোড</span>
+          <input type="file" id="sig1Input" accept="image/*" onchange="loadSig(this,'sig1Preview','sig1Name')">
+        </div>
+        <div class="sig-box" onclick="document.getElementById('sig2Input').click()">
+          <label>সাধারণ সম্পাদক</label>
+          <img id="sig2Preview" class="sig-preview" src="" alt="স্বাক্ষর">
+          <span class="sig-upload-btn">📷 স্বাক্ষর আপলোড</span>
+          <input type="file" id="sig2Input" accept="image/*" onchange="loadSig(this,'sig2Preview','sig2Name')">
+        </div>
+      </div>
+      <div style="margin-top:14px;">
+        <div class="form-group" style="margin-bottom:10px;">
+          <label>সভাপতির নাম</label>
+          <input type="text" id="sig1Name" placeholder="সভাপতির নাম লিখুন">
+        </div>
+        <div class="form-group">
+          <label>সাধারণ সম্পাদকের নাম</label>
+          <input type="text" id="sig2Name" placeholder="সাধারণ সম্পাদকের নাম লিখুন">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- GENERATE -->
+  <button class="generate-btn" onclick="generateNotice()">
+    <span>🔖</span> নোটিশ তৈরি করুন
+  </button>
+
+  <!-- PREVIEW -->
+  <div id="preview-section">
+    <div class="preview-header">
+      <div class="preview-title">👁️ প্রিভিউ</div>
+      <div class="action-btns">
+        <button class="action-btn btn-print" onclick="printNotice()">🖨️ প্রিন্ট করুন</button>
+        <button class="action-btn btn-img" onclick="downloadImage()">🖼️ ইমেজ ডাউনলোড</button>
+      </div>
+    </div>
+
+    <div class="preview-scroll-wrapper">
+      <div id="notice-output">
+        <!-- Watermark -->
+        <img class="watermark" src="https://i.ibb.co.com/7t41Zgzd/Untitled-design-20260406-235728-0000.png" alt="" crossorigin="anonymous">
+
+        <div class="notice-inner">
+          <div class="top-border"></div>
+
+          <!-- Header -->
+          <div class="notice-header-row">
+            <img class="notice-logo-left" src="https://i.ibb.co.com/7t41Zgzd/Untitled-design-20260406-235728-0000.png" alt="Logo" crossorigin="anonymous">
+            <div class="notice-org-center">
+              <div class="org-name-bn">বাংলাদেশ ছাত্রলীগ<br>ঢাকা কলেজ শাখা</div>
+              <div class="org-name-en">Bangladesh Chhatra League — Dhaka College Unit</div>
+              <div class="org-tagline">শিক্ষা, শান্তি ও প্রগতি</div>
+            </div>
+            <img class="notice-logo-right" src="https://i.ibb.co.com/FLHqcSdk/dclogo.png" alt="DC Logo" crossorigin="anonymous">
+          </div>
+
+          <!-- Sub info -->
+          <div class="notice-subinfo">
+            <span>প্রতিষ্ঠাকালঃ ২০২৬</span>
+            <span id="out-smarok">স্মারক নংঃ —</span>
+          </div>
+
+          <!-- Notice Title -->
+          <div class="notice-title-box">
+            <div class="notice-title-main" id="out-title">নোটিশ</div>
+            <div class="notice-subtitle" id="out-subtitle"></div>
+          </div>
+
+          <!-- Date -->
+          <div class="notice-date-line" id="out-date">তারিখঃ —</div>
+
+          <!-- Body -->
+          <div class="notice-body" id="out-body"></div>
+
+          <!-- Signature -->
+          <div class="notice-sig-section">
+            <div class="sig-item">
+              <img id="out-sig1" class="sig-img" src="" alt="" style="display:none">
+              <div class="sig-line"></div>
+              <div class="sig-name" id="out-sig1-name">সভাপতি</div>
+              <div class="sig-role">ঢাকা কলেজ শাখা</div>
+            </div>
+            <div class="sig-item">
+              <img id="out-sig2" class="sig-img" src="" alt="" style="display:none">
+              <div class="sig-line"></div>
+              <div class="sig-name" id="out-sig2-name">সাধারণ সম্পাদক</div>
+              <div class="sig-role">ঢাকা কলেজ শাখা</div>
+            </div>
+          </div>
+
+          <!-- Footer -->
+          <div class="notice-footer">
+            <!-- Facebook SVG Logo -->
+            <svg class="fb-logo" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#1877F2">
+              <path d="M24 12.073C24 5.446 18.627 0 12 0S0 5.446 0 12.073C0 18.1 4.388 23.094 10.125 24v-8.437H7.078v-3.49h3.047V9.413c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.234 2.686.234v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.49h-2.796V24C19.612 23.094 24 18.1 24 12.073z"/>
+            </svg>
+            <span class="footer-fb-text" id="out-fb">fb.com/YourPage</span>
+          </div>
+
+          <div class="bottom-border"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /container -->
 
 <script>
-    // Initialize Editor
-    var quill = new Quill('#editor', {
-        modules: { toolbar: '#toolbar' },
-        theme: 'snow',
-        placeholder: 'বিস্তারিত নোটিশ এখানে লিখুন...'
-    });
+  // ===== CONFIG — edit these =====
+  const FB_USERNAME = 'fb.com/MathClubAnandaMohanCollege';
+  const ORG_NAME_BN = 'গণিত ক্লাব<br>আনন্দ মোহন কলেজ';
+  const ORG_NAME_EN = 'Math Club — Ananda Mohan College';
+  const ORG_TAGLINE = 'গণিত পরিবার';
+  // ==============================
 
-    const inT = document.getElementById('in-title');
-    const inD = document.getElementById('in-date');
-    const outT = document.getElementById('out-title');
-    const outDate = document.getElementById('out-date');
-    const outB = document.getElementById('out-body');
+  // Set default date
+  document.getElementById('noticeDate').valueAsDate = new Date();
 
-    // Real-time Update
-    inT.addEventListener('input', () => outT.innerText = inT.value || 'নোটিশ-০১');
-    inD.addEventListener('input', () => outDate.innerText = inD.value || '০৭ এপ্রিল ২০২৬');
+  // Editor command
+  function fmt(cmd) {
+    document.getElementById('editor').focus();
+    document.execCommand(cmd, false, null);
+  }
+  function setFontSize(v) {
+    if (!v) return;
+    document.getElementById('editor').focus();
+    document.execCommand('fontSize', false, v);
+  }
+  function setColor(c) {
+    document.getElementById('editor').focus();
+    document.execCommand('foreColor', false, c);
+    document.getElementById('fontColor').value = c;
+  }
+
+  // Signature upload
+  function loadSig(input, previewId, nameId) {
+    const file = input.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = e => {
+      const img = document.getElementById(previewId);
+      img.src = e.target.result;
+      img.style.display = 'block';
+    };
+    reader.readAsDataURL(file);
+  }
+
+  // Convert English digits to Bangla digits
+  function toBanglaNum(n) {
+    return String(n).replace(/[0-9]/g, d => '০১২৩৪৫৬৭৮৯'[d]);
+  }
+
+  // Format date fully in Bangla numerals
+  function formatDate(val) {
+    if (!val) return '—';
+    const d = new Date(val + 'T00:00:00');
+    const months = ['জানুয়ারি','ফেব্রুয়ারি','মার্চ','এপ্রিল','মে','জুন','জুলাই','আগস্ট','সেপ্টেম্বর','অক্টোবর','নভেম্বর','ডিসেম্বর'];
+    return `${toBanglaNum(d.getDate())} ${months[d.getMonth()]}, ${toBanglaNum(d.getFullYear())}`;
+  }
+
+  // Auto font size based on content length
+  function autoFontSize(len) {
+    if (len < 200) return '1.05rem';
+    if (len < 400) return '1rem';
+    if (len < 700) return '0.95rem';
+    if (len < 1000) return '0.9rem';
+    return '0.85rem';
+  }
+
+  function generateNotice() {
+    const title = document.getElementById('noticeTitle').value.trim() || 'নোটিশ';
+    const date = document.getElementById('noticeDate').value;
+    const smarok = document.getElementById('noticeSmarok').value.trim();
+    const bodyHTML = document.getElementById('editor').innerHTML;
+    const bodyText = document.getElementById('editor').innerText;
+    const sig1Src = document.getElementById('sig1Preview').src;
+    const sig2Src = document.getElementById('sig2Preview').src;
+    const sig1Name = document.getElementById('sig1Name').value.trim() || 'সভাপতি';
+    const sig2Name = document.getElementById('sig2Name').value.trim() || 'সাধারণ সম্পাদক';
+
+    // Fill output
+    document.getElementById('out-title').textContent = title;
+    document.getElementById('out-subtitle').textContent = '';
+    document.getElementById('out-date').textContent = 'তারিখঃ ' + formatDate(date);
+    document.getElementById('out-smarok').textContent = 'স্মারক নংঃ ' + (smarok || '—');
     
-    quill.on('text-change', () => {
-        outB.innerHTML = quill.root.innerHTML;
-        // Dynamic Font Sizing
-        let textLen = quill.getText().trim().length;
-        outB.style.fontSize = (textLen > 1000) ? "17px" : "21px";
+    const bodyEl = document.getElementById('out-body');
+    bodyEl.innerHTML = bodyHTML;
+    bodyEl.style.fontSize = autoFontSize(bodyText.length);
+    bodyEl.style.textAlign = 'justify';
+
+    // Signatures
+    const os1 = document.getElementById('out-sig1');
+    const os2 = document.getElementById('out-sig2');
+    if (sig1Src && sig1Src !== window.location.href) {
+      os1.src = sig1Src; os1.style.display = 'block';
+    } else { os1.style.display = 'none'; }
+    if (sig2Src && sig2Src !== window.location.href) {
+      os2.src = sig2Src; os2.style.display = 'block';
+    } else { os2.style.display = 'none'; }
+
+    document.getElementById('out-sig1-name').textContent = sig1Name;
+    document.getElementById('out-sig2-name').textContent = sig2Name;
+    document.getElementById('out-fb').textContent = FB_USERNAME;
+
+    // Show preview
+    const previewSec = document.getElementById('preview-section');
+    previewSec.style.display = 'block';
+    setTimeout(() => {
+      previewSec.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 100);
+  }
+
+  function printNotice() {
+    window.print();
+  }
+
+  function downloadImage() {
+    const overlay = document.getElementById('loadingOverlay');
+    const loadText = document.getElementById('loadingText');
+    overlay.classList.add('show');
+    loadText.textContent = 'ফেসবুক সাইজে ইমেজ তৈরি হচ্ছে...';
+
+    const el = document.getElementById('notice-output');
+    const noticeW = 794;
+    const noticeH = el.offsetHeight;
+
+    // Facebook optimal image: 1200px wide, proportional height (min 630)
+    const fbWidth = 1200;
+    const fbHeight = Math.max(Math.round(noticeH * (fbWidth / noticeW)), 1500);
+    const scaleX = fbWidth / noticeW;
+    const scaleY = fbHeight / noticeH;
+    const scale = Math.min(scaleX, scaleY);
+
+    html2canvas(el, {
+      scale: scale,
+      useCORS: true,
+      allowTaint: true,
+      backgroundColor: '#ffffff',
+      width: noticeW,
+      height: noticeH,
+      logging: false
+    }).then(canvas => {
+      // Create final FB-sized canvas with white bg
+      const fbCanvas = document.createElement('canvas');
+      fbCanvas.width = fbWidth;
+      fbCanvas.height = fbHeight;
+      const ctx = fbCanvas.getContext('2d');
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, fbWidth, fbHeight);
+      const drawW = canvas.width;
+      const drawH = canvas.height;
+      const offsetX = Math.round((fbWidth - drawW) / 2);
+      const offsetY = Math.round((fbHeight - drawH) / 2);
+      ctx.drawImage(canvas, offsetX, offsetY);
+
+      overlay.classList.remove('show');
+      const link = document.createElement('a');
+      link.download = 'notice-facebook.png';
+      link.href = fbCanvas.toDataURL('image/png', 1.0);
+      link.click();
+    }).catch(err => {
+      overlay.classList.remove('show');
+      alert('ইমেজ তৈরিতে সমস্যা হয়েছে। পুনরায় চেষ্টা করুন।');
+      console.error(err);
     });
+  }
 
-    function loadSignature(event, id) {
-        const file = event.target.files[0];
-        if (file) {
-            const img = document.getElementById(id);
-            img.src = URL.createObjectURL(file);
-            img.style.display = 'block';
-        }
-    }
-
-    // --- Premium Professional Print Function ---
-    function premiumPrint() {
-        const printContent = document.getElementById('notice-printable').innerHTML;
-        const iframe = document.getElementById('print-iframe');
-        const iframeDoc = iframe.contentWindow.document;
-
-        const html = `
-            <html>
-                <head>
-                    <title>Print Notice</title>
-                    <link href="https://fonts.cdnfonts.com/css/solaimanlipi" rel="stylesheet">
-                    <script src="https://cdn.tailwindcss.com"><\/script>
-                    <style>
-                        body { margin: 0; padding: 0; background: white; font-family: 'SolaimanLipi', sans-serif; }
-                        .a4-page {
-                            width: 210mm;
-                            height: 297mm;
-                            padding: 20mm;
-                            margin: 0;
-                            position: relative;
-                            box-sizing: border-box;
-                            display: flex;
-                            flex-direction: column;
-                            background: white;
-                        }
-                        .watermark {
-                            position: absolute; top: 50%; left: 50%;
-                            transform: translate(-50%, -50%);
-                            width: 70%; opacity: 0.06; z-index: 0;
-                        }
-                        .content-layer { position: relative; z-index: 10; flex-grow: 1; display: flex; flex-direction: column; }
-                        .ql-editor { text-align: justify; line-height: 1.8; font-size: 21px; }
-                        @media print {
-                            body { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
-                        }
-                    </style>
-                </head>
-                <body>
-                    <div class="a4-page">
-                        ${printContent}
-                    </div>
-                    <script>
-                        // Wait for images to load before printing
-                        window.onload = function() {
-                            window.print();
-                        };
-                    <\/script>
-                </body>
-            </html>
-        `;
-
-        iframeDoc.open();
-        iframeDoc.write(html);
-        iframeDoc.close();
-    }
-
-    function saveAsImage() {
-        const area = document.getElementById('notice-printable');
-        html2canvas(area, { 
-            scale: 3, 
-            useCORS: true, 
-            logging: false,
-            backgroundColor: "#ffffff" 
-        }).then(canvas => {
-            const link = document.createElement('a');
-            link.download = 'Official_Notice.png';
-            link.href = canvas.toDataURL("image/png");
-            link.click();
-        });
-    }
+  // Set org info dynamically
+  document.querySelector('.org-name-bn').innerHTML = ORG_NAME_BN;
+  document.querySelector('.org-name-en').textContent = ORG_NAME_EN;
+  document.querySelector('.org-tagline').textContent = ORG_TAGLINE;
+  document.getElementById('out-fb').textContent = FB_USERNAME;
 </script>
-
 </body>
 </html>
